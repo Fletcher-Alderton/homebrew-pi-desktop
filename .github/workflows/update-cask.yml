@@ -1,0 +1,54 @@
+name: Update cask
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tap
+        uses: actions/checkout@v4
+
+      - name: Update cask from latest stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release=$(gh api repos/vastsa/PI-Desktop/releases --paginate --jq '[.[] | select(.draft == false and .prerelease == false)][0]')
+          version=$(jq -r '.tag_name | ltrimstr("v")' <<<"$release")
+          arm_url="https://github.com/vastsa/PI-Desktop/releases/download/v${version}/PI-Desktop-${version}-arm64.dmg"
+          intel_url="https://github.com/vastsa/PI-Desktop/releases/download/v${version}/PI-Desktop-${version}-x64.dmg"
+          arm_sha=$(curl --fail --location --silent --show-error "$arm_url" | sha256sum | cut -d' ' -f1)
+          intel_sha=$(curl --fail --location --silent --show-error "$intel_url" | sha256sum | cut -d' ' -f1)
+          python3 - "$version" "$arm_sha" "$intel_sha" <<'PY'
+          import pathlib
+          import sys
+          version, arm_sha, intel_sha = sys.argv[1:]
+          path = pathlib.Path("Casks/pi.rb")
+          text = path.read_text()
+          import re
+          text = re.sub(r'version "[^"]+"', f'version "{version}"', text, count=1)
+          text = re.sub(r'sha256 arm:   "[0-9a-f]+",', f'sha256 arm:   "{arm_sha}",', text, count=1)
+          text = re.sub(r'intel: "[0-9a-f]+"', f'intel: "{intel_sha}"', text, count=1)
+          path.write_text(text)
+          PY
+
+      - name: Commit and push changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Casks/pi.rb; then
+            echo "Cask is already current"
+            exit 0
+          fi
+          version=$(sed -n 's/^  version "\([^"]*\)"/\1/p' Casks/pi.rb)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/pi.rb
+          git commit -m "pi ${version}"
+          git push
