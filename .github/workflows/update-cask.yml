@@ -20,7 +20,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          release=$(gh api repos/vastsa/PI-Desktop/releases --paginate --jq '[.[] | select(.draft == false and .prerelease == false)][0]')
+          release=$(gh api repos/vastsa/PI-Desktop/releases --paginate --slurp --jq 'flatten | map(select(.draft == false and .prerelease == false))[0]')
           version=$(jq -r '.tag_name | ltrimstr("v")' <<<"$release")
           arm_url="https://github.com/vastsa/PI-Desktop/releases/download/v${version}/PI-Desktop-${version}-arm64.dmg"
           intel_url="https://github.com/vastsa/PI-Desktop/releases/download/v${version}/PI-Desktop-${version}-x64.dmg"
