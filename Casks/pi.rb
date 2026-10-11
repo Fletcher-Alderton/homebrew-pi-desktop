@@ -1,9 +1,9 @@
 cask "pi" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.17.0"
-  sha256 arm:   "7776cb7f1f6d6db4b60ed0342b15426126f223007a5667e5940b14087b034c99",
-         intel: "1655e7ebecb85448fadbdf14ced862993fc59cff196443ed28eaa239222c0ffd"
+  version "0.18.0"
+  sha256 arm:   "a757760d406a671e497dd24fdd1868335a6eba327f2460c86c08354b6a2b69bb",
+         intel: "31cdbde8293577a3cc3a3f9f787a60f7727c9a1eb16437da1931b6b56e75ff95"
 
   url "https://github.com/vastsa/PI-Desktop/releases/download/v#{version}/PI-Desktop-#{version}-#{arch}.dmg"
   name "PI-Desktop"
